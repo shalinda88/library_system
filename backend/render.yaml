@@ -1,0 +1,24 @@
+services:
+  - type: web
+    name: library-system-backend
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        # This should be set in the Render dashboard as a secret
+        # value: mongodb+srv://<username>:<password>@<cluster-url>/<database>
+        sync: false
+      - key: JWT_SECRET
+        # This should be set in the Render dashboard as a secret
+        # value: your_jwt_secret_here
+        sync: false
+      - key: FRONTEND_URL
+        # Update with your frontend URL once created
+        value: https://library-system-frontend.onrender.com
+    healthCheckPath: /api/health
+    autoDeploy: true
