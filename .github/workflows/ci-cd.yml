@@ -116,7 +116,7 @@ jobs:
     - name: Deploy Frontend to Netlify
       uses: nwtgck/actions-netlify@v2.0.0
       with:
-        publish-dir: ./frontend/build
+        publish-dir: frontend/dist/
         production-deploy: true
       env:
         NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -126,4 +126,4 @@ jobs:
       run: |
         echo "Deployment completed"
         echo "Backend URL: https://library-system-backend-krlv.onrender.com"
-        echo "Frontend URL: https://<your-netlify-site>.netlify.app"
+        echo "Frontend URL: https://moonlit-griffin-467aa4.netlify.app"
