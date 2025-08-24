@@ -10,120 +10,124 @@ jobs:
   backend-tests:
     name: Backend Tests
     runs-on: ubuntu-latest
-
+    env:
+      NODE_ENV: ${{ secrets.NODE_ENV }}
+      PORT: ${{ secrets.PORT }}
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      JWT_EXPIRES_IN: ${{ secrets.JWT_EXPIRES_IN }}
+      CLIENT_URL: ${{ secrets.CLIENT_URL }}
+      SOCKET_CORS_ORIGIN: ${{ secrets.SOCKET_CORS_ORIGIN }}
+      MONGODB_CONNECTION_STRING: ${{ secrets.MONGODB_CONNECTION_STRING }}
     strategy:
       matrix:
         node-version: [18.x]
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: 'backend/package-lock.json'
-    
-    - name: Install Backend Dependencies
-      run: |
-        cd backend
-        npm ci
-    
-    - name: Lint Backend
-      run: |
-        cd backend
-        npm run lint || echo "Warning: Linting issues found"
-    
-    - name: Build Backend
-      run: |
-        cd backend
-        npm run build
-    
-    - name: Run Backend Tests
-      run: |
-        cd backend
-        npm test
-    
-    - name: Upload Backend Coverage
-      uses: actions/upload-artifact@v4
-      with:
-        name: backend-coverage
-        path: backend/coverage
-  
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: 'backend/package-lock.json'
+
+      - name: Install Backend Dependencies
+        run: npm ci
+        working-directory: backend
+
+      - name: Lint Backend
+        run: npm run lint || echo "Warning: Linting issues found"
+        working-directory: backend
+
+      - name: Build Backend
+        run: npm run build
+        working-directory: backend
+
+      - name: Run Backend Tests
+        run: npm test
+        working-directory: backend
+
+      - name: Upload Backend Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+
   frontend-tests:
     name: Frontend Tests
     runs-on: ubuntu-latest
-
+    env:
+      VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL }}
     strategy:
       matrix:
         node-version: [18.x]
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
-    
-    - name: Install Frontend Dependencies
-      run: |
-        cd frontend
-        npm ci
-    
-    - name: Lint Frontend
-      run: |
-        cd frontend
-        npm run lint || echo "Warning: Linting issues found"
-    
-    - name: Run Frontend Tests
-      run: |
-        cd frontend
-        npm test
-    
-    - name: Build Frontend
-      run: |
-        cd frontend
-        npm run build
-    
-    - name: Upload Frontend Coverage
-      uses: actions/upload-artifact@v4
-      with:
-        name: frontend-coverage
-        path: frontend/coverage
-  
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: 'frontend/package-lock.json'
+
+      - name: Install Frontend Dependencies
+        run: npm ci
+        working-directory: frontend
+
+      - name: Lint Frontend
+        run: npm run lint || echo "Warning: Linting issues found"
+        working-directory: frontend
+
+      - name: Run Frontend Tests
+        run: npm test
+        working-directory: frontend
+
+      - name: Build Frontend
+        run: npm run build
+        working-directory: frontend
+
+      - name: Upload Frontend Coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage
+
   deploy:
-    name: Deploy to Render
+    name: Deploy to Render & Netlify
     needs: [backend-tests, frontend-tests]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Deploy Backend to Render
-      uses: JorgeLNJunior/render-deploy@v1.4.3
-      with:
-        service_id: ${{secrets.RENDER_SERVICE_ID}}
-        api_key: ${{secrets.RENDER_API_KEY}}
-        wait: true
-        deployment_time: 10
-    
-    # Deploy Frontend to Netlify
-    - name: Deploy Frontend to Netlify
-      uses: nwtgck/actions-netlify@v2.0.0
-      with:
-        publish-dir: frontend/dist/
-        production-deploy: true
-      env:
-        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-        NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-    
-    - name: Deployment Status
-      run: |
-        echo "Deployment completed"
-        echo "Backend URL: https://library-system-backend-krlv.onrender.com"
-        echo "Frontend URL: https://moonlit-griffin-467aa4.netlify.app"
+      - uses: actions/checkout@v4
+
+      # Deploy Backend to Render
+      - name: Deploy Backend to Render
+        uses: JorgeLNJunior/render-deploy@v1.4.3
+        with:
+          service_id: ${{ secrets.RENDER_SERVICE_ID }}
+          api_key: ${{ secrets.RENDER_API_KEY }}
+          wait: true
+          deployment_time: 10
+
+      # Deploy Frontend to Netlify
+      - name: Deploy Frontend to Netlify
+        uses: nwtgck/actions-netlify@v2.0.0
+        with:
+          publish-dir: frontend/dist
+          production-deploy: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL }}
+
+      - name: Deployment Status
+        run: |
+          echo "Deployment completed"
+          echo "Backend URL: https://library-system-backend-krlv.onrender.com"
+          echo "Frontend URL: https://moonlit-griffin-467aa4.netlify.app"
