@@ -33,7 +33,7 @@ jobs:
           cache-dependency-path: 'backend/package-lock.json'
 
       - name: Install Backend Dependencies
-        run: npm ci
+        run: npm ci --include=dev
         working-directory: backend
 
       - name: Lint Backend
