@@ -37,7 +37,8 @@ jobs:
         working-directory: backend
 
       - name: Lint Backend
-        run: npm run lint || echo "Warning: Linting issues found"
+        run: |
+          npm run lint || echo "Warning: Linting issues found"
         working-directory: backend
 
       - name: Build Backend
@@ -79,7 +80,8 @@ jobs:
         working-directory: frontend
 
       - name: Lint Frontend
-        run: npm run lint || echo "Warning: Linting issues found"
+        run: |
+          npm run lint || echo "Warning: Linting issues found"
         working-directory: frontend
 
       - name: Run Frontend Tests
@@ -95,6 +97,12 @@ jobs:
         with:
           name: frontend-coverage
           path: frontend/coverage
+          
+      - name: Upload Frontend Build
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
 
   deploy:
     name: Deploy to Render & Netlify
@@ -104,6 +112,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      
+      # Download frontend build from previous job
+      - name: Download Frontend Build
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/dist
 
       # Deploy Backend to Render
       - name: Deploy Backend to Render
@@ -112,7 +127,7 @@ jobs:
           service_id: ${{ secrets.RENDER_SERVICE_ID }}
           api_key: ${{ secrets.RENDER_API_KEY }}
           wait: true
-          deployment_time: 10
+          timeout: 600
 
       # Deploy Frontend to Netlify
       - name: Deploy Frontend to Netlify
@@ -123,8 +138,6 @@ jobs:
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL }}
-          VITE_SOCKET_URL: ${{ secrets.VITE_SOCKET_URL }}
 
       - name: Deployment Status
         run: |
