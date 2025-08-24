@@ -1,7 +1,5 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import authService from '../../services/authService';
-import { server } from '../mocks/server';
-import { http, HttpResponse } from 'msw';
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -28,29 +26,44 @@ describe('Auth Service', () => {
     vi.clearAllMocks();
   });
 
-  it('should login a user successfully', async () => {
+it('should login a user successfully', async () => {
     const loginData = {
-      email: 'test@example.com',
-      password: 'password123'
+        email: 'admin@library.com',
+        password: 'Abcd!234'
     };
 
     const result = await authService.login(loginData);
     
+    // Check user properties
     expect(result).toEqual(expect.objectContaining({
-      _id: 'user123',
-      name: 'Test User',
-      email: 'test@example.com',
-      token: 'fake-token-123'
+        _id: '68a80d33727d8b0ae88cd4fe',
+        name: 'Admin User',
+        email: 'admin@library.com',
+        role: 'admin',
+        membershipId: 'ADM001',
     }));
     
-    // Check localStorage
-    expect(localStorageMock.getItem('token')).toBe('fake-token-123');
-    expect(JSON.parse(localStorageMock.getItem('user') || '{}')).toEqual(expect.objectContaining({
-      _id: 'user123',
-      name: 'Test User',
-      email: 'test@example.com'
+    // Check that token exists and is a JWT (starts with eyJ)
+    expect(result.token).toBeDefined();
+    expect(typeof result.token).toBe('string');
+    expect(result.token).toMatch(/^eyJ/);
+    
+    // Check localStorage - don't check exact token value
+    const storedToken = localStorageMock.getItem('token');
+    expect(storedToken).toBeDefined();
+    expect(storedToken).toBe(result.token);
+    
+    // Check user data in localStorage
+    const storedUser = JSON.parse(localStorageMock.getItem('user') || '{}');
+    expect(storedUser).toEqual(expect.objectContaining({
+        _id: '68a80d33727d8b0ae88cd4fe',
+        name: 'Admin User',
+        email: 'admin@library.com',
+        role: 'admin',
+        membershipId: 'ADM001'
     }));
-  });
+});
+
 
   it('should fail login with invalid credentials', async () => {
     const loginData = {
@@ -73,39 +86,53 @@ describe('Auth Service', () => {
     expect(localStorageMock.getItem('user')).toBeNull();
   });
 
-  it('should register a new user', async () => {
+it('should register a new user', async () => {
     const registerData = {
-      name: 'New User',
-      email: 'new@example.com',
-      password: 'password123',
-      confirmPassword: 'password123'
+        name: 'New User3',
+        email: `newuser${Date.now()}@library.com`,
+        password: 'Abcd!234',
     };
 
     const result = await authService.register(registerData);
     
+    // Check user properties but not exact ID since it's generated
     expect(result).toEqual(expect.objectContaining({
-      _id: 'newuser123',
-      name: 'New User',
-      email: 'new@example.com',
-      token: 'new-fake-token-123'
+        name: 'New User3',
+        email: registerData.email,
+        role: 'user',
     }));
     
-    // Check localStorage
-    expect(localStorageMock.getItem('token')).toBe('new-fake-token-123');
-    expect(JSON.parse(localStorageMock.getItem('user') || '{}')).toEqual(expect.objectContaining({
-      _id: 'newuser123',
-      name: 'New User',
-      email: 'new@example.com'
+    // Verify membership ID format but not exact value
+    expect(result.membershipId).toBeDefined();
+    expect(typeof result.membershipId).toBe('string');
+    expect(result.membershipId).toMatch(/^LIB\d+$/);
+    
+    // Check that token exists and is a JWT (starts with eyJ)
+    expect(result.token).toBeDefined();
+    expect(typeof result.token).toBe('string');
+    expect(result.token).toMatch(/^eyJ/);
+    
+    // Check localStorage has token (without checking exact value)
+    const storedToken = localStorageMock.getItem('token');
+    expect(storedToken).toBeDefined();
+    expect(storedToken).toBe(result.token);
+    
+    // Check user data in localStorage
+    const storedUser = JSON.parse(localStorageMock.getItem('user') || '{}');
+    expect(storedUser).toEqual(expect.objectContaining({
+        name: 'New User3',
+        email: registerData.email,
+        role: 'user'
     }));
-  });
+});
 
   it('should logout a user', () => {
     // Setup: first login a user
     localStorageMock.setItem('token', 'fake-token-123');
     localStorageMock.setItem('user', JSON.stringify({
-      _id: 'user123',
-      name: 'Test User',
-      email: 'test@example.com'
+      _id: '68a80d33727d8b0ae88cd4fe',
+      name: 'Admin User',
+      email: 'admin@library.com'
     }));
     
     // Perform logout
@@ -124,10 +151,10 @@ describe('Auth Service', () => {
   it('should return user for getCurrentUser when logged in', () => {
     // Setup: login a user
     const userData = {
-      _id: 'user123',
-      name: 'Test User',
-      email: 'test@example.com',
-      role: 'user'
+      _id: '68a80d33727d8b0ae88cd4fe',
+      name: 'Admin User',
+      email: 'admin@library.com',
+      role: 'admin'
     };
     localStorageMock.setItem('user', JSON.stringify(userData));
     

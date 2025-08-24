@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { render, screen, waitFor, fireEvent } from '../test-utils';
+import { render, screen } from '../test-utils';
 import userEvent from '@testing-library/user-event';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginPage from '../../pages/LoginPage';
-import { server } from '../mocks/server';
 
 // Mock the useAuth hook and the AuthProvider
 vi.mock('../../contexts/AuthContext', () => ({
@@ -13,7 +12,7 @@ vi.mock('../../contexts/AuthContext', () => ({
     error: null,
     clearError: vi.fn()
   })),
-  AuthProvider: ({ children }) => children
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children
 }));
 
 describe('LoginPage Integration Test', () => {

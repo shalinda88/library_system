@@ -9,7 +9,7 @@ import NotificationIndicator from './NotificationIndicator';
   toggleSidebar: () => void;
 }
 
-const Header = ({ toggleSidebar }: HeaderProps) => {
+const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);

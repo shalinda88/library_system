@@ -34,7 +34,7 @@ const Layout = ({ children }: LayoutProps) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-gray-900">
-      <Header toggleSidebar={toggleSidebar} />
+      <Header />
       
       <div className="flex flex-grow">
         {/* Sidebar - only show if user is authenticated */}
